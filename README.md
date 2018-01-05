@@ -1,16 +1,30 @@
 # HashFlatten
 
-Just one method i sometimes miss on Hash. It recursivelly flattens hash to be just one level deep.
+Two methods i sometimes miss on Hash.
+
+## `#destructure`
 
 hash = { a: 'a',
          b: { a: 'b' },
          c: { b: { a: 'c' } } }
 
-hash.flatten =>
+hash.destructure =>
 
   { 'a' => 'a',
     'b.a' => 'b',
     'c.b.a' => 'c' }
+
+## `#structure`
+
+hash = { 'a' => 'a',
+         'b.a' => 'b',
+         'c.b.a' => 'c' }
+
+hash.structure =>
+
+{ 'a' => 'a',
+  'b' => { 'a' => 'b' },
+  'c' => { 'b' => { 'a' => 'c' } } }
 
 ## Installation
 
@@ -36,7 +50,7 @@ class MyClass
   using HashFlatten
 end
 ```
-now you can call `#flatten` on hashes in `MyClass`.
+now you can call `#destructure` od `#structure` on hashes in `MyClass`.
 
 Here is an excellent blog post on refinements if you didn't use them before: http://interblah.net/why-is-nobody-using-refinements
 
