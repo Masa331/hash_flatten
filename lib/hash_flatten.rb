@@ -1,5 +1,3 @@
-require 'hash_flatten/version'
-
 module HashFlatten
   refine Hash do
     def destructure
@@ -21,23 +19,31 @@ module HashFlatten
     end
 
     def structure
-      structured = each_with_object({}) do |(k, v), n|
-        if k.include? '.'
-          keys = k.split('.')
-          new_key = keys.pop
+      new_hash = decompose_keys
 
-          n[keys.join('.')] = n.fetch(keys.join('.'), {}).merge({ new_key.to_s => v })
-        else
-          n[k.to_s] = v
+      new_hash.each do |k, v|
+        if v.is_a? Hash
+          new_value = v.structure
+
+          new_hash[k] = new_value
         end
       end
+    end
 
-      structured
+    def decompose_keys
+      each_with_object({}) do |(k, v), new_hash|
+        key_parts = k.split('.')
+        top_level_key = key_parts.shift
+        tail = key_parts.join('.')
 
-      if structured.any? { |k, v| k.include? '.' }
-        structured.structure
-      else
-        structured
+        if tail.empty?
+          new_hash[top_level_key] = v
+        else
+          existing_value = new_hash.fetch(top_level_key, {})
+          new_value = existing_value.merge({ tail => v })
+
+          new_hash[top_level_key] = new_value
+        end
       end
     end
   end
