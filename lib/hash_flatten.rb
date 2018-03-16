@@ -1,48 +1,29 @@
 module HashFlatten
   refine Hash do
-    def destructure
-      flattened = each_with_object({}) do |(k, v), n|
-        if v.is_a? Hash
-          v.each do |k2, v2|
-            n["#{k}.#{k2}"] = v2
-          end
+    def squish_levels
+      each_with_object({}) do |(key, value), squished|
+        if value.is_a? Hash
+          value.squish_levels.each { |sub_key, sub_value| squished.store("#{key}.#{sub_key}", sub_value) }
         else
-          n[k.to_s] = v
-        end
-      end
-
-      if flattened.any? { |_, v| v.is_a? Hash }
-        flattened.destructure
-      else
-        flattened
-      end
-    end
-
-    def structure
-      new_hash = decompose_keys
-
-      new_hash.each do |k, v|
-        if v.is_a? Hash
-          new_value = v.structure
-
-          new_hash[k] = new_value
+          squished.store(key.to_s, value)
         end
       end
     end
 
-    def decompose_keys
-      each_with_object({}) do |(k, v), new_hash|
-        key_parts = k.split('.')
-        top_level_key = key_parts.shift
-        tail = key_parts.join('.')
+    def stretch_to_levels
+      each_with_object({}) do |(key, value), stretched|
+        key_parts = key.to_s.split('.')
 
-        if tail.empty?
-          new_hash[top_level_key] = v
+        if key_parts.size > 1
+          level_key = key_parts.shift
+          tail = key_parts.join('.')
+
+          existing_content = stretched.fetch(level_key, {})
+          new_content = existing_content.merge({ tail => value }).stretch_to_levels
+
+          stretched.store(level_key, new_content)
         else
-          existing_value = new_hash.fetch(top_level_key, {})
-          new_value = existing_value.merge({ tail => v })
-
-          new_hash[top_level_key] = new_value
+          stretched.store(key.to_s, value)
         end
       end
     end
